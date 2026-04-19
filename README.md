@@ -4,10 +4,7 @@
 **Herramienta SQL:** MotherDuck (DuckDB cloud) — Notebook "iAhorro"
 
 ## Resumen ejecutivo
-
-La prueba se ha abordado con un enfoque práctico orientado a negocio, priorizando la calidad del dato y la identificación de fricciones operativas en el funnel.
-
-El análisis revela un problema sistemático de sincronización entre el sistema bancario y el CRM que está afectando significativamente al reporting de conversión. Además, se identifican variaciones relevantes en la eficiencia del funnel que sugieren oportunidades de mejora en la gestión operativa y la calidad de los leads.
+La prueba se ha abordado con un enfoque práctico orientado a negocio, priorizando la calidad del dato y la identificación de fricciones operativas en el funnel. El análisis revela un problema sistemático de sincronización entre el sistema bancario y el CRM que está afectando significativamente al reporting de conversión. Además, se identifican variaciones relevantes en la eficiencia del funnel que sugieren oportunidades de mejora en la gestión operativa y la calidad de los leads.
 
 ---
 
@@ -29,11 +26,16 @@ monica-claros-prueba-iahorro/
 │   ├── 2.2_medidas.md
 │   ├── 2.3_dashboard.md
 │   └── 2.4_performance.md
-├── n8n/                             ← [pendiente — ver nota abajo]
+├── n8n/
+│   ├── 3.1_workflow.json
+│   ├── 3.1_workflow_captura.png
+│   ├── 3.1_workflow_webhook.png
+│   └── 3.1_explicacion.md                       
 └── bonus/
     └── 4_analisis_negocio.md        ← análisis para Head of Operations
 ```
 
+---
 ---
 
 ## Decisiones técnicas tomadas
@@ -43,6 +45,7 @@ Usé **MotherDuck** (DuckDB en cloud) en lugar de BigQuery Sandbox. Ambas son op
 
 ### Estructura de datos en MotherDuck
 Al importar los CSVs, cada archivo quedó como base de datos separada (`leads`, `calls`, `mortgage_app`, `agents`). Para simplificar los queries, creé vistas unificadas en `my_db`:
+
 ```sql
 CREATE OR REPLACE VIEW my_db.main.leads AS SELECT * FROM leads.leads;
 CREATE OR REPLACE VIEW my_db.main.calls AS SELECT * FROM calls.calls;
@@ -60,6 +63,12 @@ Resultado: 803 → 800 filas limpias.
 ### Agentes excluidos del análisis de rendimiento
 Los agent_ids `AGT097`, `AGT098`, `AGT099` no existen en la tabla `agents` (el equipo activo llega hasta `AGT020`). Se excluyen del ejercicio 1.2 por ser agentes que ya no están en la empresa.
 
+### Power BI
+Modelo en esquema estrella con `leads_clean` como tabla de hechos central. Tabla de fechas generada en DAX. Tres medidas implementadas: tasa de conversión lead-a-solicitud, variación YoY de leads captados y tiempo medio hasta primera llamada en horas.
+
+### n8n
+Workflow con 6 nodos: Schedule Trigger (lunes-viernes 8:00h) → simulación de datos BigQuery vía nodo Code → filtro de leads con status nuevo y más de 48h de espera → IF condicional → construcción del mensaje → envío via HTTP Request a webhook. Probado y funcionando: el webhook recibió correctamente los 3 leads de prueba con todos los campos requeridos (ID, fecha, fuente, importe).
+
 ---
 
 ## Hallazgo más relevante
@@ -67,28 +76,25 @@ Los agent_ids `AGT097`, `AGT098`, `AGT099` no existen en la tabla `agents` (el e
 **El 52% de las hipotecas aprobadas no tienen el CRM actualizado.** 46 de 88 solicitudes con `status = aprobada` en `mortgage_applications` mantienen `status = solicitud_enviada` en `leads`. El patrón es sistemático (los 46 tienen exactamente el mismo status), lo que apunta a un proceso operacional roto, no a errores puntuales. Detalle completo en `0_exploracion.md` y `bigquery/1.3_resultados.txt`.
 
 Este fallo provoca una subestimación del rendimiento comercial y puede estar afectando tanto a la toma de decisiones como a la evaluación del equipo.
+
 ---
 
 ## Qué haría diferente con más tiempo
 
-1. **Parte 2 (Power BI):** Construir el modelo estrella completo con tabla de fechas generada en DAX, las 3 medidas requeridas y el dashboard de operaciones. Con el tiempo disponible no fue posible completar esta parte.
-
-2. **Parte 3 (n8n):** Implementar el workflow completo con simulación de datos vía nodo Code, lógica condicional y mensaje a Slack/Teams. Tenía claro el diseño pero no el tiempo de implementación.
-
-3. **Análisis más profundo del funnel:** Cruzar la semana de captación con la fuente (`utm_campaign`) para validar la hipótesis de que el pico de leads de la semana 10 vino de una campaña de menor calidad.
-
-4. **Tests de integridad automatizados:** Convertir los queries de la Parte 0 en checks recurrentes (dbt tests o similar) en lugar de queries manuales.
+1. **n8n — Ejercicio 3.2:** Implementar el loop de PATCH por lead con retry ante error 429, backoff exponencial y notificación de fallos persistentes.
+2. **Análisis de fuente de captación:** Cruzar la semana de captación con `utm_campaign` para validar la hipótesis de que el pico de leads de la semana 10 vino de una campaña de menor calidad.
+3. **Tests de integridad automatizados:** Convertir los queries de la Parte 0 en checks recurrentes con dbt tests en lugar de queries manuales.
+4. **Power BI — optimización:** Revisar rendimiento con Performance Analyzer y reducir cardinalidad en columnas de texto.
 
 ---
 
 ## Partes incompletas
 
-| Parte | Estado | Motivo |
-|-------|--------|--------|
-| Parte 0 — Exploración |  Completa | — |
-| Parte 1 — SQL (1.1–1.5) |  Completa | — |
-| Parte 2 — Power BI |  Completa | — |
-| Parte 3 — n8n |  Pendiente | Requiere construcción del workflow en n8n Cloud |
-| Parte 4 — Análisis de negocio |  Completa | En `bonus/4_analisis_negocio.md` |
-
-La gestión de los bloqueos de tiempo en Partes 2 y 3 sigue la indicación del enunciado: se documenta el bloqueo y se continúa con lo que sí está en manos del candidato completar con rigor.
+| Parte | Estado |
+|-------|--------|
+| Parte 0 — Exploración | Completa |
+| Parte 1 — SQL (1.1–1.5) | Completa |
+| Parte 2 — Power BI | Completa |
+| Parte 3 — n8n (3.1) | Completa |
+| Parte 3 — n8n (3.2 errores) | Diseño documentado, sin implementar |
+| Parte 4 — Análisis de negocio | Completa |
