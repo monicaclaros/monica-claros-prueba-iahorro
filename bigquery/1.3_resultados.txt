@@ -1,0 +1,91 @@
+EJERCICIO 1.3 — Consistencia de datos entre tablas
+Ejecutado en: MotherDuck (DuckDB) — Notebook iAhorro
+=====================================================
+
+CONDICIÓN A: leads con status cerrado_ganado que no tienen ninguna solicitud en mortgage_applications
+------------------------------------------------------------------------------------------------------
+RESULTADO: 0 filas — sin anomalías. Todos los leads cerrados tienen solicitud registrada. ✅
+
+CONDICIÓN B: solicitudes con status 'aprobada' cuyo lead no tiene status 'cerrado_ganado'
+------------------------------------------------------------------------------------------
+RESULTADO: 46 filas
+
+lead_id    | lead_status      | app_status | problema
+-----------+------------------+------------+------------------------------
+LEAD00035  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00036  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00048  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00056  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00061  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00066  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00099  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00104  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00109  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00123  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00154  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00160  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00163  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00181  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00192  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00246  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00260  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00274  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00295  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00296  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00299  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00330  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00354  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00387  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00409  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00442  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00443  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00486  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00487  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00498  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00511  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00528  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00601  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00607  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00619  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00669  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00670  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00681  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00696  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00714  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00730  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00732  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00759  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00776  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00795  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+LEAD00798  | solicitud_enviada | aprobada  | aprobada sin actualizar CRM
+
+CONDICIÓN C: leads donde MAX(call_number) no coincide con el total real de llamadas
+------------------------------------------------------------------------------------
+RESULTADO: 5 filas
+
+lead_id    | llamadas_reales | max_call_number | problema
+-----------+-----------------+-----------------+------------------------------------------
+LEAD00001  | 3               | 2               | call_number no cuadra con total llamadas
+LEAD00051  | 3               | 2               | call_number no cuadra con total llamadas
+LEAD00101  | 4               | 3               | call_number no cuadra con total llamadas
+LEAD00218  | 2               | 1               | call_number no cuadra con total llamadas
+LEAD00322  | 2               | 1               | call_number no cuadra con total llamadas
+
+RESUMEN EJECUTIVO:
+condicion | problema                          | total
+----------+-----------------------------------+------
+A         | cerrado_ganado sin solicitud      | 0
+B         | aprobada sin actualizar CRM       | 46
+C         | call_number no cuadra             | 5
+
+CONCLUSIÓN:
+El hallazgo más crítico es la condición B: el 52% de las hipotecas aprobadas (46 de 88) no
+tienen el CRM actualizado a cerrado_ganado. No es ruido aleatorio — los 46 registros tienen
+exactamente el mismo lead_status (solicitud_enviada), lo que apunta a un proceso sistemático
+roto: el equipo comercial no está actualizando el estado del lead tras recibir la confirmación
+de aprobación bancaria.
+
+Las anomalías de la condición C (5 leads) coinciden en su mayoría con los duplicados
+detectados en la exploración (LEAD00001, LEAD00051, LEAD00101). Los dos restantes
+(LEAD00218, LEAD00322) tienen dos llamadas registradas con call_number=1, indicando un
+fallo en el secuenciador del sistema de llamadas.

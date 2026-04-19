@@ -1,0 +1,23 @@
+EJERCICIO 1.2 — Rendimiento por agente (Top 3 por tasa de conversión)
+Ejecutado en: MotherDuck (DuckDB) — Notebook iAhorro
+Período: dataset completo | Solo agentes activos | Mínimo 15 leads asignados
+=========================================================================
+
+name      | team     | office   | leads_asignados | solicitudes_generadas | tasa_conversion_pct
+----------+----------+----------+-----------------+-----------------------+--------------------
+Agente 5  | equipo_b | madrid   | 43              | 15                    | 34.9
+Agente 13 | equipo_a | madrid   | 38              | 13                    | 34.2
+Agente 3  | equipo_c | valencia | 38              | 13                    | 34.2
+
+ANÁLISIS:
+El agente con mayor tasa de conversión (Agente 5, 34.9%) coincide en este caso con el mayor
+número absoluto de solicitudes generadas (15). Sin embargo, la distinción entre tasa y volumen
+sigue siendo metodológicamente relevante.
+
+Si ambas métricas divergieran, un agente con tasa alta pero cartera pequeña podría estar
+"jugando seguro" — trabajando únicamente con leads muy cualificados o teniendo una muestra
+insuficiente. Por eso el umbral de 15 leads mínimos es necesario para que la tasa sea
+estadísticamente significativa.
+
+Nota: Se excluyeron los agentes AGT097, AGT098 y AGT099 por no existir en la tabla agents
+(agentes que ya no están en la empresa pero cuyos leads siguen en el sistema).
