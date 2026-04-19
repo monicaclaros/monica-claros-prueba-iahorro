@@ -7,7 +7,7 @@
 | leads | 803 | ~800 | +3 (duplicados) |
 | calls | 1409 | ~1500 | -91 |
 | mortgage_applications | 217 | ~250 | -33 |
-| agents | 20 | 20 | 0 ✅ |
+| agents | 20 | 20 | 0  |
 
 Las diferencias en calls y mortgage_applications están dentro de lo razonable para datos de producción. Los 3 leads extra se explican por duplicados (ver punto 4).
 
@@ -16,11 +16,11 @@ Las diferencias en calls y mortgage_applications están dentro de lo razonable p
 **leads:**
 - `utm_campaign`: 172 nulos (21.4%) — nulo estructural, tráfico directo sin campaña. Se mantiene.
 - `requested_amount`: 65 nulos (8.1%) — se excluyen de análisis de importes pero se mantienen en conteos generales.
-- `assigned_agent_id`: 0 nulos ✅
+- `assigned_agent_id`: 0 nulos 
 
 **mortgage_applications:**
-- `approved_amount`: 129 nulos — exactamente 217-88=129, es decir, solo las solicitudes aprobadas tienen importe. Nulo estructural ✅
-- `decision_at`: 95 nulos — coincide con solicitudes pendientes (21) + en revisión (53) + algunas canceladas sin fecha. Nulo estructural ✅
+- `approved_amount`: 129 nulos — exactamente 217-88=129, es decir, solo las solicitudes aprobadas tienen importe. Nulo estructural 
+- `decision_at`: 95 nulos — coincide con solicitudes pendientes (21) + en revisión (53) + algunas canceladas sin fecha. Nulo estructural 
 
 ## 3. Consistencia de columnas categóricas
 
@@ -32,7 +32,7 @@ Las diferencias en calls y mortgage_applications están dentro de lo razonable p
 
 Decisión: normalizar con `LOWER()` en la vista `leads_clean`.
 
-**calls.outcome** y **mortgage_applications.status**: sin variantes inesperadas ✅
+**calls.outcome** y **mortgage_applications.status**: sin variantes inesperadas 
 
 ## 4. Registros duplicados
 
@@ -69,7 +69,7 @@ No son inserciones dobles idénticas: las filas difieren en:
 
 **leads.requested_amount:** rango 80.000€ — 449.000€, media 268.130€, mediana 272.000€.
 - Distribución simétrica sin outliers extremos.
-- Sin anomalías ✅
+- Sin anomalías 
 
 **Inconsistencia CRM:** 46 leads (52% de las 88 solicitudes aprobadas) tienen `mortgage_applications.status = aprobada` pero `leads.status = solicitud_enviada`.
 - El CRM no se actualizó tras la aprobación bancaria.
