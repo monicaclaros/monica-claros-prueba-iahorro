@@ -23,7 +23,12 @@ monica-claros-prueba-iahorro/
 │   ├── 1.3_consistencia.sql + resultados ← anomalías entre tablas
 │   ├── 1.4_optimizacion.sql         ← query optimizada con explicaciones
 │   └── 1.5_diseno_tabla.md          ← diseño tabla eventos (conceptual)
-├── powerbi/                         ← [pendiente — ver nota abajo]
+├── powerbi/
+│   ├── iAhorro Dashboard.pbix
+│   ├── 2.1_modelado.md
+│   ├── 2.2_medidas.md
+│   ├── 2.3_dashboard.md
+│   └── 2.4_performance.md
 ├── n8n/                             ← [pendiente — ver nota abajo]
 └── bonus/
     └── 4_analisis_negocio.md        ← análisis para Head of Operations
@@ -80,10 +85,10 @@ Este fallo provoca una subestimación del rendimiento comercial y puede estar af
 
 | Parte | Estado | Motivo |
 |-------|--------|--------|
-| Parte 0 — Exploración | ✅ Completa | — |
-| Parte 1 — SQL (1.1–1.5) | ✅ Completa | — |
-| Parte 2 — Power BI | ⏳ Pendiente | Requiere Power BI Desktop instalado y tiempo adicional para el modelado y dashboard |
-| Parte 3 — n8n | ⏳ Pendiente | Requiere construcción del workflow en n8n Cloud |
-| Parte 4 — Análisis de negocio | ✅ Completa | En `bonus/4_analisis_negocio.md` |
+| Parte 0 — Exploración |  Completa | — |
+| Parte 1 — SQL (1.1–1.5) |  Completa | — |
+| Parte 2 — Power BI |  Completa | — |
+| Parte 3 — n8n |  Pendiente | Requiere construcción del workflow en n8n Cloud |
+| Parte 4 — Análisis de negocio |  Completa | En `bonus/4_analisis_negocio.md` |
 
 La gestión de los bloqueos de tiempo en Partes 2 y 3 sigue la indicación del enunciado: se documenta el bloqueo y se continúa con lo que sí está en manos del candidato completar con rigor.
