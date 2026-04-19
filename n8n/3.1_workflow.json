@@ -1,0 +1,209 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -496,
+        0
+      ],
+      "id": "204c4a4b-8c5d-4c82-b613-38b9a8b508fc",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Simula la respuesta que vendría de BigQuery / DuckDB\nconst ahora = new Date();\n\nconst leads = [\n  { lead_id: 'LEAD00042', created_at: new Date(ahora - 72 * 3600000).toISOString(), source: 'paid_search', requested_amount: 250000, status: 'nuevo' },\n  { lead_id: 'LEAD00087', created_at: new Date(ahora - 96 * 3600000).toISOString(), source: 'organic', requested_amount: 320000, status: 'nuevo' },\n  { lead_id: 'LEAD00123', created_at: new Date(ahora - 51 * 3600000).toISOString(), source: 'referral', requested_amount: 180000, status: 'nuevo' },\n  { lead_id: 'LEAD00200', created_at: new Date(ahora - 12 * 3600000).toISOString(), source: 'paid_search', requested_amount: 410000, status: 'nuevo' },\n  { lead_id: 'LEAD00301', created_at: new Date(ahora - 30 * 3600000).toISOString(), source: 'organic', requested_amount: 295000, status: 'contactado' }\n];\n\nreturn leads.map(lead => ({ json: lead }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -288,
+        0
+      ],
+      "id": "45776584-64a8-4d98-9f35-95ca96c4e0a4",
+      "name": "Simular datos BigQuery"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Filtra leads con status 'nuevo' que llevan más de 48h sin gestionar\nconst ahora = new Date();\nconst LIMITE_HORAS = 48;\n\nconst leadsFiltrados = $input.all().filter(item => {\n  const lead = item.json;\n  const creado = new Date(lead.created_at);\n  const horasTranscurridas = (ahora - creado) / (1000 * 3600);\n  return lead.status === 'nuevo' && horasTranscurridas > LIMITE_HORAS;\n});\n\nif (leadsFiltrados.length === 0) {\n  return [{ json: { total: 0, leads: [] } }];\n}\n\nreturn [{\n  json: {\n    total: leadsFiltrados.length,\n    leads: leadsFiltrados.map(item => item.json)\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -80,
+        0
+      ],
+      "id": "c2c4d20b-18d6-4e0d-a707-6c7de60f03ef",
+      "name": "Filtrar leads +48h"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0e8d55b5-7804-4aec-b648-305ac4837926",
+              "leftValue": "={{ $json.total }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        128,
+        0
+      ],
+      "id": "c1aa39c5-8b33-459e-ba8e-80b3d1f4281f",
+      "name": "¿Hay leads sin gestionar?"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Construye el mensaje de alerta\nconst data = $input.first().json;\nconst fecha = new Date().toLocaleDateString('es-ES', { \n  weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' \n});\n\nlet mensaje = `ALERTA iAhorro — ${fecha}\\n`;\nmensaje += `Hay ${data.total} lead(s) con status NUEVO sin gestionar hace más de 48 horas:\\n\\n`;\n\ndata.leads.forEach(lead => {\n  const horasEspera = Math.floor((new Date() - new Date(lead.created_at)) / (1000 * 3600));\n  mensaje += `- ${lead.lead_id} | Creado: ${new Date(lead.created_at).toLocaleString('es-ES')} | Fuente: ${lead.source} | Importe: ${lead.requested_amount.toLocaleString('es-ES')}€ | Espera: ${horasEspera}h\\n`;\n});\n\nmensaje += `\\nAccion requerida: asignar agente y realizar primer contacto.`;\n\nreturn [{ json: { mensaje, total: data.total, timestamp: new Date().toISOString() } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        336,
+        -96
+      ],
+      "id": "83a8ee3a-7370-482d-a189-fbeb87f064fc",
+      "name": "Construir mensaje alerta"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://webhook.site/36c7cd9f-4d40-406c-abb2-711239f99149",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "text",
+              "value": "={{ $json.mensaje }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        544,
+        -96
+      ],
+      "id": "7b268e33-d1b0-4eff-b420-7a12552d12dc",
+      "name": "Enviar alerta webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "// No hay leads pendientes — no se envía nada\nconsole.log('Sin leads pendientes hoy. No se envía notificación.');\nreturn [{ json: { status: 'ok', mensaje: 'Sin leads pendientes. No se envía notificación.' } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        336,
+        96
+      ],
+      "id": "1a7b299c-ee17-49d5-8dee-f9bf32f3ca50",
+      "name": "Sin alertas hoy"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Simular datos BigQuery",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simular datos BigQuery": {
+      "main": [
+        [
+          {
+            "node": "Filtrar leads +48h",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrar leads +48h": {
+      "main": [
+        [
+          {
+            "node": "¿Hay leads sin gestionar?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Hay leads sin gestionar?": {
+      "main": [
+        [
+          {
+            "node": "Construir mensaje alerta",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Sin alertas hoy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Construir mensaje alerta": {
+      "main": [
+        [
+          {
+            "node": "Enviar alerta webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "ecaeed6a-30da-45d5-a682-f8b12f424128",
+  "meta": {
+    "instanceId": "79d3d2071e635c6eb1af805f94e584c9fab45bfb05b8a22686a88437a6f4d307"
+  },
+  "id": "Xwv058RuAC9yIxLH",
+  "tags": []
+}
