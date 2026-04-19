@@ -4,7 +4,7 @@ Ejecutado en: MotherDuck (DuckDB) — Notebook iAhorro
 
 CONDICIÓN A: leads con status cerrado_ganado que no tienen ninguna solicitud en mortgage_applications
 ------------------------------------------------------------------------------------------------------
-RESULTADO: 0 filas — sin anomalías. Todos los leads cerrados tienen solicitud registrada. ✅
+RESULTADO: 0 filas — sin anomalías. Todos los leads cerrados tienen solicitud registrada. 
 
 CONDICIÓN B: solicitudes con status 'aprobada' cuyo lead no tiene status 'cerrado_ganado'
 ------------------------------------------------------------------------------------------
